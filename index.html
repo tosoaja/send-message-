@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Simple Telegram Chat</title>
+<style>
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #f4f7f8;
+    margin: 0; padding: 0;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+  }
+  header {
+    background: #1a73e8;
+    color: white;
+    padding: 1rem;
+    text-align: center;
+    font-weight: 600;
+    font-size: 1.2rem;
+  }
+  #chat {
+    flex: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    background: white;
+    border-left: 2px solid #ddd;
+    border-right: 2px solid #ddd;
+  }
+  .msg {
+    margin-bottom: 1rem;
+    padding: 0.7rem 1rem;
+    border-radius: 12px;
+    max-width: 70%;
+    word-wrap: break-word;
+  }
+  .msg.user {
+    background: #1a73e8;
+    color: white;
+    align-self: flex-end;
+    border-bottom-right-radius: 0;
+  }
+  .msg.admin {
+    background: #eee;
+    color: #333;
+    align-self: flex-start;
+    border-bottom-left-radius: 0;
+  }
+  #form {
+    display: flex;
+    padding: 1rem;
+    background: #eee;
+    border-top: 2px solid #ddd;
+  }
+  #form input[type="text"] {
+    flex: 1;
+    padding: 0.7rem;
+    border: 1px solid #ccc;
+    border-radius: 6px;
+    font-size: 1rem;
+    margin-right: 0.5rem;
+  }
+  #form button {
+    padding: 0.7rem 1.2rem;
+    background: #1a73e8;
+    color: white;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1rem;
+    transition: background 0.3s ease;
+  }
+  #form button:hover {
+    background: #155ab6;
+  }
+</style>
+</head>
+<body>
+
+<header>Chat Telegram Sederhana</header>
+
+<div id="chat"></div>
+
+<form id="form">
+  <input id="name" type="text" placeholder="Nama kamu" required />
+  <input id="message" type="text" placeholder="Tulis pesan..." required autocomplete="off" />
+  <button type="submit">Kirim</button>
+</form>
+
+<script>
+  const chatEl = document.getElementById('chat');
+  const form = document.getElementById('form');
+  const nameInput = document.getElementById('name');
+  const messageInput = document.getElementById('message');
+
+  const API_BASE = 'https://server-three-eosin-81.vercel.app/api';
+
+  // Render pesan di chat area
+  function renderMessages(messages) {
+    chatEl.innerHTML = '';
+    messages.forEach(msg => {
+      const div = document.createElement('div');
+      div.classList.add('msg');
+      div.classList.add(msg.from === 'admin' ? 'admin' : 'user');
+      div.textContent = msg.text;
+      chatEl.appendChild(div);
+    });
+    chatEl.scrollTop = chatEl.scrollHeight;
+  }
+
+  // Ambil pesan dari server
+  async function fetchMessages() {
+    try {
+      const res = await fetch(`${API_BASE}/receive`);
+      const data = await res.json();
+      if (data.messages) {
+        renderMessages(data.messages);
+      }
+    } catch (err) {
+      console.error('Gagal ambil pesan:', err);
+    }
+  }
+
+  // Kirim pesan ke server
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    const name = nameInput.value.trim();
+    const message = messageInput.value.trim();
+    if (!name || !message) return;
+
+    try {
+      await fetch(`${API_BASE}/send`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({ name, message })
+      });
+      messageInput.value = '';
+      fetchMessages();
+    } catch (err) {
+      alert('Gagal mengirim pesan');
+    }
+  });
+
+  // Polling setiap 5 detik untuk update pesan
+  setInterval(fetchMessages, 5000);
+  fetchMessages(); // fetch pertama saat load halaman
+</script>
+
+</body>
+</html>
